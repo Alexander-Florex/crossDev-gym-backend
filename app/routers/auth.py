@@ -23,7 +23,14 @@ from app.utils.security import create_access_token, decode_token
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar gimnasio y admin",
+    description="Crea un nuevo gimnasio (tenant) junto con su usuario administrador inicial "
+    "y devuelve los tokens de acceso.",
+)
 @limiter.limit("10/minute")
 async def register(
     request: Request, data: RegisterRequest, db: Annotated[AsyncSession, Depends(get_db)]
@@ -45,7 +52,12 @@ async def register(
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="Iniciar sesión",
+    description="Autentica a un usuario con email y contraseña, y devuelve access y refresh token.",
+)
 @limiter.limit("10/minute")
 async def login(
     request: Request, data: LoginRequest, db: Annotated[AsyncSession, Depends(get_db)]
@@ -64,7 +76,12 @@ async def login(
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    summary="Renovar access token",
+    description="Genera un nuevo access token a partir de un refresh token válido.",
+)
 @limiter.limit("20/minute")
 async def refresh(
     request: Request, data: RefreshRequest, db: Annotated[AsyncSession, Depends(get_db)]
@@ -94,6 +111,11 @@ async def refresh(
     return TokenResponse(access_token=access_token, refresh_token=data.refresh_token)
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Perfil propio",
+    description="Devuelve los datos del usuario autenticado actualmente.",
+)
 async def me(current_user: Annotated[User, Depends(get_current_active_user)]):
     return current_user

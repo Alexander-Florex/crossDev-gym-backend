@@ -15,7 +15,13 @@ from app.utils.pagination import Page, build_page
 router = APIRouter(prefix="/api/v1/memberships", tags=["memberships"])
 
 
-@router.post("", response_model=MembershipResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=MembershipResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear membresía",
+    description="Da de alta una membresía para un alumno del gimnasio.",
+)
 async def create_membership(
     request: Request,
     data: MembershipCreate,
@@ -36,7 +42,12 @@ async def create_membership(
     return membership
 
 
-@router.get("", response_model=Page[MembershipResponse])
+@router.get(
+    "",
+    response_model=Page[MembershipResponse],
+    summary="Listar membresías",
+    description="Lista paginada de membresías del gimnasio (el alumno solo ve las propias).",
+)
 async def list_memberships(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
@@ -58,7 +69,12 @@ async def list_memberships(
     return build_page([MembershipResponse.model_validate(m) for m in items], total, page, size)
 
 
-@router.get("/{membership_id}", response_model=MembershipResponse)
+@router.get(
+    "/{membership_id}",
+    response_model=MembershipResponse,
+    summary="Obtener membresía",
+    description="Devuelve el detalle de una membresía por id.",
+)
 async def get_membership(
     membership_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -75,7 +91,12 @@ async def get_membership(
     return membership
 
 
-@router.patch("/{membership_id}", response_model=MembershipResponse)
+@router.patch(
+    "/{membership_id}",
+    response_model=MembershipResponse,
+    summary="Actualizar membresía",
+    description="Actualiza plan, fechas, precio o estado (activa/vencida/suspendida).",
+)
 async def update_membership(
     request: Request,
     membership_id: uuid.UUID,
@@ -99,7 +120,12 @@ async def update_membership(
     return membership
 
 
-@router.delete("/{membership_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{membership_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar membresía",
+    description="Elimina una membresía del gimnasio.",
+)
 async def delete_membership(
     request: Request,
     membership_id: uuid.UUID,

@@ -5,12 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.tenant import Tenant
 from app.models.user import User, UserRole
 from app.schemas.auth import LoginRequest, RegisterRequest
+from app.utils.logging import get_logger
 from app.utils.security import (
     create_access_token,
     create_refresh_token,
     hash_password,
     verify_password,
 )
+
+logger = get_logger(__name__)
 
 
 async def register_tenant_and_admin(db: AsyncSession, data: RegisterRequest) -> User:
@@ -46,11 +49,13 @@ async def authenticate_user(db: AsyncSession, data: LoginRequest) -> User:
     )
     user = result.scalars().first()
     if user is None or not verify_password(data.password, user.hashed_password):
+        logger.warning("auth_login_failed", email=data.email, reason="invalid_credentials")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"detail": "Credenciales inválidas", "code": "INVALID_CREDENTIALS"},
         )
     if not user.is_active:
+        logger.warning("auth_login_failed", user_id=str(user.id), reason="user_inactive")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"detail": "Usuario inactivo", "code": "USER_INACTIVE"},

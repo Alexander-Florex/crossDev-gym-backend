@@ -23,7 +23,13 @@ async def _to_response(db: AsyncSession, gym_class: Class) -> ClassResponse:
     return response
 
 
-@router.post("", response_model=ClassResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ClassResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear clase",
+    description="Crea una nueva clase del gimnasio, asignada a un personal trainer.",
+)
 async def create_class(
     request: Request,
     data: ClassCreate,
@@ -44,7 +50,12 @@ async def create_class(
     return await _to_response(db, gym_class)
 
 
-@router.get("", response_model=Page[ClassResponse])
+@router.get(
+    "",
+    response_model=Page[ClassResponse],
+    summary="Listar clases",
+    description="Lista paginada de clases del gimnasio, con cupos disponibles.",
+)
 async def list_classes(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
@@ -59,7 +70,12 @@ async def list_classes(
     return build_page(responses, total, page, size)
 
 
-@router.get("/{class_id}", response_model=ClassResponse)
+@router.get(
+    "/{class_id}",
+    response_model=ClassResponse,
+    summary="Obtener clase",
+    description="Devuelve el detalle de una clase, con cupos disponibles.",
+)
 async def get_class(
     class_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -69,7 +85,12 @@ async def get_class(
     return await _to_response(db, gym_class)
 
 
-@router.patch("/{class_id}", response_model=ClassResponse)
+@router.patch(
+    "/{class_id}",
+    response_model=ClassResponse,
+    summary="Actualizar clase",
+    description="Actualiza nombre, horario, capacidad, trainer o estado de una clase.",
+)
 async def update_class(
     request: Request,
     class_id: uuid.UUID,

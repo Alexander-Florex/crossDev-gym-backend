@@ -14,12 +14,22 @@ from app.services.tenants import update_tenant
 router = APIRouter(prefix="/api/v1/tenants", tags=["tenants"])
 
 
-@router.get("/me", response_model=TenantResponse)
+@router.get(
+    "/me",
+    response_model=TenantResponse,
+    summary="Ver gimnasio propio",
+    description="Devuelve los datos del gimnasio (tenant) del usuario autenticado.",
+)
 async def get_my_tenant(tenant: Annotated[Tenant, Depends(get_tenant)]):
     return tenant
 
 
-@router.patch("/me", response_model=TenantResponse)
+@router.patch(
+    "/me",
+    response_model=TenantResponse,
+    summary="Actualizar gimnasio propio",
+    description="Actualiza nombre y configuración del gimnasio (tenant) actual.",
+)
 async def update_my_tenant(
     request: Request,
     data: TenantUpdate,

@@ -15,7 +15,14 @@ from app.utils.pagination import Page, build_page
 router = APIRouter(prefix="/api/v1/attendance", tags=["attendance"])
 
 
-@router.post("", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=AttendanceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar asistencia",
+    description="Registra el check-in de un usuario. El alumno se registra a sí mismo; "
+    "admin y trainer pueden registrar a cualquier usuario del gimnasio.",
+)
 async def check_in(
     request: Request,
     data: AttendanceCreate,
@@ -48,7 +55,12 @@ async def check_in(
     return attendance
 
 
-@router.get("", response_model=Page[AttendanceResponse])
+@router.get(
+    "",
+    response_model=Page[AttendanceResponse],
+    summary="Listar asistencias",
+    description="Lista paginada de asistencias (el alumno solo ve las propias).",
+)
 async def list_attendance(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],

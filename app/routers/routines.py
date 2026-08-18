@@ -31,7 +31,13 @@ def _assert_can_view(current_user: User, routine: Routine) -> None:
     )
 
 
-@router.post("", response_model=RoutineResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=RoutineResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear rutina",
+    description="Crea una rutina de entrenamiento para un alumno, con sus ejercicios.",
+)
 async def create_routine(
     request: Request,
     data: RoutineCreate,
@@ -62,7 +68,12 @@ async def create_routine(
     return routine
 
 
-@router.get("", response_model=Page[RoutineResponse])
+@router.get(
+    "",
+    response_model=Page[RoutineResponse],
+    summary="Listar rutinas",
+    description="Lista paginada de rutinas (alumno y trainer solo ven las propias).",
+)
 async def list_routines(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
@@ -77,7 +88,12 @@ async def list_routines(
     return build_page([RoutineResponse.model_validate(r) for r in items], total, page, size)
 
 
-@router.get("/{routine_id}", response_model=RoutineResponse)
+@router.get(
+    "/{routine_id}",
+    response_model=RoutineResponse,
+    summary="Obtener rutina",
+    description="Devuelve el detalle de una rutina con sus ejercicios.",
+)
 async def get_routine(
     routine_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -88,7 +104,12 @@ async def get_routine(
     return routine
 
 
-@router.patch("/{routine_id}", response_model=RoutineResponse)
+@router.patch(
+    "/{routine_id}",
+    response_model=RoutineResponse,
+    summary="Actualizar rutina",
+    description="Actualiza nombre, descripción o ejercicios de una rutina.",
+)
 async def update_routine(
     request: Request,
     routine_id: uuid.UUID,
@@ -111,7 +132,12 @@ async def update_routine(
     return updated
 
 
-@router.delete("/{routine_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{routine_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar rutina",
+    description="Elimina una rutina y sus ejercicios.",
+)
 async def delete_routine(
     request: Request,
     routine_id: uuid.UUID,
@@ -132,7 +158,11 @@ async def delete_routine(
     )
 
 
-@router.get("/{routine_id}/pdf")
+@router.get(
+    "/{routine_id}/pdf",
+    summary="Descargar PDF de rutina",
+    description="Genera y descarga la rutina en formato PDF, lista para imprimir o compartir.",
+)
 async def download_routine_pdf(
     routine_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],

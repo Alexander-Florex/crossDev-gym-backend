@@ -12,7 +12,13 @@ from app.services.reports import build_overview
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
 
-@router.get("/overview", response_model=OverviewReport)
+@router.get(
+    "/overview",
+    response_model=OverviewReport,
+    summary="Resumen del gimnasio",
+    description="Contadores generales del gimnasio: alumnos y trainers activos, "
+    "membresías por estado, clases activas, reservas y asistencias del día.",
+)
 async def overview(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(require_role(UserRole.admin))],

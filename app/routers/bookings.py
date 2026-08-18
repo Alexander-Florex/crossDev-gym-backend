@@ -15,7 +15,14 @@ from app.utils.pagination import Page, build_page
 router = APIRouter(prefix="/api/v1/bookings", tags=["bookings"])
 
 
-@router.post("", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=BookingResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Reservar clase",
+    description="Reserva un cupo en una clase. El alumno reserva para sí mismo; "
+    "el admin puede reservar en nombre de un alumno (reserva manual).",
+)
 async def create_booking(
     request: Request,
     data: BookingCreate,
@@ -53,7 +60,12 @@ async def create_booking(
     return booking
 
 
-@router.get("", response_model=Page[BookingResponse])
+@router.get(
+    "",
+    response_model=Page[BookingResponse],
+    summary="Listar reservas",
+    description="Lista paginada de reservas (el alumno solo ve las propias).",
+)
 async def list_bookings(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
@@ -68,7 +80,12 @@ async def list_bookings(
     return build_page([BookingResponse.model_validate(b) for b in items], total, page, size)
 
 
-@router.delete("/{booking_id}", response_model=BookingResponse)
+@router.delete(
+    "/{booking_id}",
+    response_model=BookingResponse,
+    summary="Cancelar reserva",
+    description="Cancela una reserva existente (libera el cupo de la clase).",
+)
 async def cancel_booking(
     request: Request,
     booking_id: uuid.UUID,
