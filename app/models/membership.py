@@ -16,6 +16,23 @@ class MembershipStatus(StrEnum):
     suspended = "suspended"
 
 
+class MembershipPeriod(StrEnum):
+    daily = "daily"
+    weekly = "weekly"
+    biweekly = "biweekly"
+    monthly = "monthly"
+    quarterly = "quarterly"
+
+
+PERIOD_DAYS: dict[MembershipPeriod, int] = {
+    MembershipPeriod.daily: 1,
+    MembershipPeriod.weekly: 7,
+    MembershipPeriod.biweekly: 15,
+    MembershipPeriod.monthly: 30,
+    MembershipPeriod.quarterly: 90,
+}
+
+
 class Membership(UUIDPKMixin, TenantMixin, Base):
     __tablename__ = "memberships"
 
@@ -23,6 +40,9 @@ class Membership(UUIDPKMixin, TenantMixin, Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     plan_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    period: Mapped[MembershipPeriod] = mapped_column(
+        default=MembershipPeriod.monthly, nullable=False
+    )
     status: Mapped[MembershipStatus] = mapped_column(
         default=MembershipStatus.active, nullable=False
     )

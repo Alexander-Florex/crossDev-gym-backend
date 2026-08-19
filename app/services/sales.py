@@ -1,11 +1,12 @@
 import uuid
+from datetime import date, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.membership import Membership
+from app.models.membership import PERIOD_DAYS, Membership, MembershipStatus
 from app.models.product import Product
 from app.models.sale import Sale, SaleItem, SaleStatus, SaleType
 from app.repositories.base import TenantScopedRepository
@@ -103,6 +104,12 @@ async def create_membership_payment(
             detail={"detail": "Membresía no encontrada", "code": "MEMBERSHIP_NOT_FOUND"},
         )
 
+    # Vencida: la nueva vigencia arranca hoy. Vigente: se apila desde el vencimiento actual.
+    extension = timedelta(days=PERIOD_DAYS[membership.period])
+    period_start = membership.end_date if membership.end_date >= date.today() else date.today()
+    membership.end_date = period_start + extension
+    membership.status = MembershipStatus.active
+
     sale = Sale(
         tenant_id=tenant_id,
         sale_type=SaleType.membership,
@@ -163,6 +170,18 @@ async def cancel_sale(db: AsyncSession, tenant_id: uuid.UUID, sale_id: uuid.UUID
             product = (await db.scalars(stmt)).first()
             if product is not None:
                 product.stock_quantity += item.quantity
+    elif sale.sale_type == SaleType.membership and sale.membership_id is not None:
+        membership_repo = TenantScopedRepository(db, Membership, tenant_id)
+        membership = await membership_repo.get(sale.membership_id)
+        if membership is not None:
+            # Revierte la extensión de este pago; no distingue pagos apilados cancelados
+            # fuera de orden (caso raro en caja diaria).
+            membership.end_date -= timedelta(days=PERIOD_DAYS[membership.period])
+            membership.status = (
+                MembershipStatus.active
+                if membership.end_date >= date.today()
+                else MembershipStatus.expired
+            )
 
     sale.status = SaleStatus.cancelled
     await db.commit()

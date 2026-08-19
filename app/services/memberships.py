@@ -39,6 +39,7 @@ async def create_membership(
         Membership(
             user_id=data.user_id,
             plan_name=data.plan_name,
+            period=data.period,
             start_date=data.start_date,
             end_date=data.end_date,
             price=data.price,

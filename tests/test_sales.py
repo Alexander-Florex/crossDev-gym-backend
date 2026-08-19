@@ -90,6 +90,83 @@ async def test_membership_payment_registers_sale(client: AsyncClient):
     assert list_response.status_code == 200
     assert list_response.json()["total"] == 1
 
+    membership_after = await client.get(
+        f"/api/v1/memberships/{membership['id']}", headers=auth_headers(admin_token)
+    )
+    updated_membership = membership_after.json()
+    assert updated_membership["status"] == "active"
+    assert updated_membership["end_date"] > membership["end_date"]
+
+
+async def test_membership_payment_extends_active_membership_from_current_end_date(
+    client: AsyncClient,
+):
+    admin = await register_gym(client, "saleepsilon")
+    admin_token = admin["tokens"]["access_token"]
+    student = await create_user(client, admin_token, "saleepsilon", "student", "student")
+
+    membership_response = await client.post(
+        "/api/v1/memberships",
+        json={
+            "user_id": student["id"],
+            "plan_name": "Mensual",
+            "period": "monthly",
+            "start_date": "2026-08-01",
+            "end_date": "2026-09-01",
+            "price": 15000,
+        },
+        headers=auth_headers(admin_token),
+    )
+    membership = membership_response.json()
+
+    await client.post(
+        f"/api/v1/sales/memberships/{membership['id']}/pay",
+        json={"payment_method": "cash"},
+        headers=auth_headers(admin_token),
+    )
+
+    membership_after = await client.get(
+        f"/api/v1/memberships/{membership['id']}", headers=auth_headers(admin_token)
+    )
+    assert membership_after.json()["end_date"] == "2026-10-01"
+
+
+async def test_cancel_membership_payment_reverts_extension(client: AsyncClient):
+    admin = await register_gym(client, "salezeta")
+    admin_token = admin["tokens"]["access_token"]
+    student = await create_user(client, admin_token, "salezeta", "student", "student")
+
+    membership_response = await client.post(
+        "/api/v1/memberships",
+        json={
+            "user_id": student["id"],
+            "plan_name": "Mensual",
+            "period": "monthly",
+            "start_date": "2026-08-01",
+            "end_date": "2026-09-01",
+            "price": 15000,
+        },
+        headers=auth_headers(admin_token),
+    )
+    membership = membership_response.json()
+
+    pay_response = await client.post(
+        f"/api/v1/sales/memberships/{membership['id']}/pay",
+        json={"payment_method": "cash"},
+        headers=auth_headers(admin_token),
+    )
+    sale = pay_response.json()
+
+    cancel_response = await client.post(
+        f"/api/v1/sales/{sale['id']}/cancel", headers=auth_headers(admin_token)
+    )
+    assert cancel_response.status_code == 200
+
+    membership_after = await client.get(
+        f"/api/v1/memberships/{membership['id']}", headers=auth_headers(admin_token)
+    )
+    assert membership_after.json()["end_date"] == membership["end_date"]
+
 
 async def test_cancel_product_sale_restocks(client: AsyncClient):
     admin = await register_gym(client, "saledelta")
