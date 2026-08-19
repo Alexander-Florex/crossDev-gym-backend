@@ -12,9 +12,12 @@ from app.routers import (
     auth,
     bookings,
     classes,
+    inventory,
     memberships,
+    products,
     reports,
     routines,
+    sales,
     tenants,
     users,
 )
@@ -52,6 +55,18 @@ TAGS_METADATA = [
     {
         "name": "reports",
         "description": "Reportes básicos del gimnasio para el panel de administración.",
+    },
+    {
+        "name": "inventory",
+        "description": "Control de stock de equipamiento y consumibles del gimnasio.",
+    },
+    {
+        "name": "products",
+        "description": "Catálogo de productos para la venta (agua, suplementos, etc.).",
+    },
+    {
+        "name": "sales",
+        "description": "Caja: venta de productos y pago (abono) de membresías.",
     },
 ]
 
@@ -103,6 +118,9 @@ app.include_router(bookings.router)
 app.include_router(routines.router)
 app.include_router(attendance.router)
 app.include_router(reports.router)
+app.include_router(inventory.router)
+app.include_router(products.router)
+app.include_router(sales.router)
 
 
 @app.get("/", summary="Health check", description="Verifica que la API esté levantada.")
