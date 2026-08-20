@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.membership import Membership
+from app.models.membership import Membership, MembershipStatus
 from app.models.user import User, UserRole
 from app.repositories.base import TenantScopedRepository
 from app.schemas.membership import MembershipCreate, MembershipUpdate
@@ -56,10 +56,13 @@ async def list_memberships(
     page: int,
     size: int,
     user_id: uuid.UUID | None = None,
+    status_filter: MembershipStatus | None = None,
 ) -> tuple[list[Membership], int]:
     conditions = [Membership.tenant_id == tenant_id]
     if user_id is not None:
         conditions.append(Membership.user_id == user_id)
+    if status_filter is not None:
+        conditions.append(Membership.status == status_filter)
 
     total = await db.scalar(select(func.count()).select_from(Membership).where(*conditions)) or 0
     stmt = (

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -44,12 +45,18 @@ async def list_attendance(
     size: int,
     user_id: uuid.UUID | None = None,
     class_id: uuid.UUID | None = None,
+    from_: datetime | None = None,
+    to: datetime | None = None,
 ) -> tuple[list[Attendance], int]:
     conditions = [Attendance.tenant_id == tenant_id]
     if user_id is not None:
         conditions.append(Attendance.user_id == user_id)
     if class_id is not None:
         conditions.append(Attendance.class_id == class_id)
+    if from_ is not None:
+        conditions.append(Attendance.checked_in_at >= from_)
+    if to is not None:
+        conditions.append(Attendance.checked_in_at <= to)
 
     total = await db.scalar(select(func.count()).select_from(Attendance).where(*conditions)) or 0
     stmt = (

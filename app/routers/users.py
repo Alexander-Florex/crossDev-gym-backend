@@ -51,10 +51,11 @@ async def create_user(
 async def list_users(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(require_role(UserRole.admin, UserRole.trainer))],
+    role: UserRole | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ):
-    items, total = await users_service.list_users(db, current_user.tenant_id, page, size)
+    items, total = await users_service.list_users(db, current_user.tenant_id, page, size, role)
     return build_page([UserResponse.model_validate(u) for u in items], total, page, size)
 
 

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_active_user
+from app.models.booking import BookingStatus
 from app.models.user import User, UserRole
 from app.schemas.booking import BookingCreate, BookingResponse
 from app.services import bookings as bookings_service
@@ -70,12 +71,15 @@ async def list_bookings(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
     class_id: uuid.UUID | None = None,
+    student_id: uuid.UUID | None = None,
+    status: BookingStatus | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ):
-    student_id = current_user.id if current_user.role == UserRole.student else None
+    if current_user.role == UserRole.student:
+        student_id = current_user.id
     items, total = await bookings_service.list_bookings(
-        db, current_user.tenant_id, page, size, student_id, class_id
+        db, current_user.tenant_id, page, size, student_id, class_id, status
     )
     return build_page([BookingResponse.model_validate(b) for b in items], total, page, size)
 

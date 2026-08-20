@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.repositories.base import TenantScopedRepository
 from app.schemas.user import UserCreate, UserUpdate
 from app.utils.security import hash_password
@@ -40,14 +40,14 @@ async def create_user(db: AsyncSession, tenant_id: uuid.UUID, data: UserCreate) 
 
 
 async def list_users(
-    db: AsyncSession, tenant_id: uuid.UUID, page: int, size: int
+    db: AsyncSession, tenant_id: uuid.UUID, page: int, size: int, role: UserRole | None = None
 ) -> tuple[list[User], int]:
     base_conditions = (User.is_deleted.is_(False),)
+    if role is not None:
+        base_conditions = (*base_conditions, User.role == role)
 
     total_stmt = (
-        select(func.count())
-        .select_from(User)
-        .where(User.tenant_id == tenant_id, *base_conditions)
+        select(func.count()).select_from(User).where(User.tenant_id == tenant_id, *base_conditions)
     )
     total = await db.scalar(total_stmt) or 0
 

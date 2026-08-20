@@ -42,11 +42,18 @@ async def create_class(db: AsyncSession, tenant_id: uuid.UUID, data: ClassCreate
 
 
 async def list_classes(
-    db: AsyncSession, tenant_id: uuid.UUID, page: int, size: int, only_active: bool = False
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    page: int,
+    size: int,
+    is_active: bool | None = None,
+    trainer_id: uuid.UUID | None = None,
 ) -> tuple[list[Class], int]:
     conditions = [Class.tenant_id == tenant_id]
-    if only_active:
-        conditions.append(Class.is_active.is_(True))
+    if is_active is not None:
+        conditions.append(Class.is_active.is_(is_active))
+    if trainer_id is not None:
+        conditions.append(Class.trainer_id == trainer_id)
 
     total = await db.scalar(select(func.count()).select_from(Class).where(*conditions)) or 0
     stmt = (

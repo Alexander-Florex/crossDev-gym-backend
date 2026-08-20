@@ -59,3 +59,50 @@ async def test_membership_requires_student_role(client: AsyncClient):
         headers=auth_headers(admin_token),
     )
     assert response.status_code == 422
+
+
+async def test_list_memberships_filters_by_status(client: AsyncClient):
+    admin = await register_gym(client, "memgamma")
+    admin_token = admin["tokens"]["access_token"]
+    student1 = await create_user(client, admin_token, "memgamma", "student", "student1")
+    student2 = await create_user(client, admin_token, "memgamma", "student", "student2")
+
+    membership1 = await client.post(
+        "/api/v1/memberships",
+        json={
+            "user_id": student1["id"],
+            "plan_name": "Mensual",
+            "start_date": "2026-01-01",
+            "end_date": "2026-02-01",
+            "price": 15000,
+        },
+        headers=auth_headers(admin_token),
+    )
+    await client.post(
+        "/api/v1/memberships",
+        json={
+            "user_id": student2["id"],
+            "plan_name": "Mensual",
+            "start_date": "2026-01-01",
+            "end_date": "2026-02-01",
+            "price": 15000,
+        },
+        headers=auth_headers(admin_token),
+    )
+    await client.patch(
+        f"/api/v1/memberships/{membership1.json()['id']}",
+        json={"status": "suspended"},
+        headers=auth_headers(admin_token),
+    )
+
+    suspended_only = await client.get(
+        "/api/v1/memberships", params={"status": "suspended"}, headers=auth_headers(admin_token)
+    )
+    assert suspended_only.json()["total"] == 1
+    assert suspended_only.json()["items"][0]["user_id"] == student1["id"]
+
+    active_only = await client.get(
+        "/api/v1/memberships", params={"status": "active"}, headers=auth_headers(admin_token)
+    )
+    assert active_only.json()["total"] == 1
+    assert active_only.json()["items"][0]["user_id"] == student2["id"]

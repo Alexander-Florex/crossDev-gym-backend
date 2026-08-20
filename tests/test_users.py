@@ -128,3 +128,47 @@ async def test_non_admin_cannot_create_users(client: AsyncClient):
         headers=_auth(student_token),
     )
     assert forbidden_response.status_code == 403
+
+
+async def test_list_users_filters_by_role(client: AsyncClient):
+    admin = await _register(client, "epsilon")
+    admin_token = admin["tokens"]["access_token"]
+
+    await client.post(
+        "/api/v1/users",
+        json={
+            "email": "trainer@epsilon.com",
+            "password": "trainerpass123",
+            "first_name": "Tom",
+            "last_name": "Trainer",
+            "role": "trainer",
+        },
+        headers=_auth(admin_token),
+    )
+    await client.post(
+        "/api/v1/users",
+        json={
+            "email": "student@epsilon.com",
+            "password": "studentpass123",
+            "first_name": "Sam",
+            "last_name": "Student",
+            "role": "student",
+        },
+        headers=_auth(admin_token),
+    )
+
+    trainers_only = await client.get(
+        "/api/v1/users", params={"role": "trainer"}, headers=_auth(admin_token)
+    )
+    assert trainers_only.status_code == 200
+    body = trainers_only.json()
+    assert body["total"] == 1
+    assert body["items"][0]["role"] == "trainer"
+
+    students_only = await client.get(
+        "/api/v1/users", params={"role": "student"}, headers=_auth(admin_token)
+    )
+    assert students_only.json()["total"] == 1
+
+    unfiltered = await client.get("/api/v1/users", headers=_auth(admin_token))
+    assert unfiltered.json()["total"] == 3

@@ -59,12 +59,13 @@ async def create_class(
 async def list_classes(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
-    only_active: bool = True,
+    is_active: bool | None = True,
+    trainer_id: uuid.UUID | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ):
     items, total = await classes_service.list_classes(
-        db, current_user.tenant_id, page, size, only_active
+        db, current_user.tenant_id, page, size, is_active, trainer_id
     )
     responses = [await _to_response(db, item) for item in items]
     return build_page(responses, total, page, size)

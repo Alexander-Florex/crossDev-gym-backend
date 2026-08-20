@@ -70,12 +70,15 @@ async def list_bookings(
     size: int,
     student_id: uuid.UUID | None = None,
     class_id: uuid.UUID | None = None,
+    status_filter: BookingStatus | None = None,
 ) -> tuple[list[Booking], int]:
     conditions = [Booking.tenant_id == tenant_id]
     if student_id is not None:
         conditions.append(Booking.student_id == student_id)
     if class_id is not None:
         conditions.append(Booking.class_id == class_id)
+    if status_filter is not None:
+        conditions.append(Booking.status == status_filter)
 
     total = await db.scalar(select(func.count()).select_from(Booking).where(*conditions)) or 0
     stmt = (

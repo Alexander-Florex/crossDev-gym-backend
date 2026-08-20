@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -65,11 +66,15 @@ async def list_attendance(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
     class_id: uuid.UUID | None = None,
+    user_id: uuid.UUID | None = None,
+    from_: datetime | None = Query(None, alias="from"),  # noqa: B008
+    to: datetime | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ):
-    user_id = current_user.id if current_user.role == UserRole.student else None
+    if current_user.role == UserRole.student:
+        user_id = current_user.id
     items, total = await attendance_service.list_attendance(
-        db, current_user.tenant_id, page, size, user_id, class_id
+        db, current_user.tenant_id, page, size, user_id, class_id, from_, to
     )
     return build_page([AttendanceResponse.model_validate(a) for a in items], total, page, size)

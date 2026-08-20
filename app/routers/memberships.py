@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_active_user, require_role
+from app.models.membership import MembershipStatus
 from app.models.user import User, UserRole
 from app.schemas.membership import MembershipCreate, MembershipResponse, MembershipUpdate
 from app.services import memberships as memberships_service
@@ -52,6 +53,7 @@ async def list_memberships(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
     user_id: uuid.UUID | None = None,
+    membership_status: MembershipStatus | None = Query(None, alias="status"),  # noqa: B008
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ):
@@ -64,7 +66,7 @@ async def list_memberships(
         )
 
     items, total = await memberships_service.list_memberships(
-        db, current_user.tenant_id, page, size, user_id
+        db, current_user.tenant_id, page, size, user_id, membership_status
     )
     return build_page([MembershipResponse.model_validate(m) for m in items], total, page, size)
 
@@ -80,9 +82,7 @@ async def get_membership(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    membership = await memberships_service.get_membership(
-        db, current_user.tenant_id, membership_id
-    )
+    membership = await memberships_service.get_membership(db, current_user.tenant_id, membership_id)
     if current_user.role == UserRole.student and membership.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
